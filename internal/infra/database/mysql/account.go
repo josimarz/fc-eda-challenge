@@ -49,13 +49,13 @@ func (g *AccountGateway) FindById(id string) (*entity.Account, error) {
 			account a
 				join customer c on (a.customer_id = c.id)
 		where
-			id = ?`)
+			a.id = ?`)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	var customer *entity.Customer
-	var account *entity.Account
+	customer := entity.Customer{}
+	account := entity.Account{}
 	dest := []any{
 		&account.Id,
 		&account.Balance,
@@ -70,8 +70,8 @@ func (g *AccountGateway) FindById(id string) (*entity.Account, error) {
 	if err := stmt.QueryRow(id).Scan(dest...); err != nil {
 		return nil, err
 	}
-	account.Customer = customer
-	return account, nil
+	account.Customer = &customer
+	return &account, nil
 }
 
 func (g *AccountGateway) FindByCustomer(customer *entity.Customer) ([]*entity.Account, error) {
@@ -87,7 +87,7 @@ func (g *AccountGateway) FindByCustomer(customer *entity.Customer) ([]*entity.Ac
 	defer rows.Close()
 	var accounts []*entity.Account
 	for rows.Next() {
-		var account *entity.Account
+		account := &entity.Account{}
 		dest := []any{
 			&account.Id,
 			&account.Balance,

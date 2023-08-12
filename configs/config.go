@@ -6,6 +6,7 @@ type Config struct {
 	Port            string `mapstructure:"PORT"`
 	WalletCoreDSN   string `mapstructure:"WALLET_CORE_DSN"`
 	TransactionsDSN string `mapstructure:"TRANSACTIONS_DSN"`
+	KafkaDSN        string `mapstructure:"KAFKA_DSN"`
 }
 
 func LoadConfig(path string) (config *Config, err error) {
