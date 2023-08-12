@@ -1,0 +1,35 @@
+@hostname = localhost
+@port = 3003
+@host = {{hostname}}:{{port}}
+
+###
+# @name createCustomer
+POST http://{{host}}/customers HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "Josimar Zimermann",
+    "email": "josimarz@yahoo.com.br"
+}
+
+###
+# @name listCustomers
+GET http://{{host}}/customers HTTP/1.1
+
+###
+# @name findCustomer
+GET http://{{host}}/customers/{{createCustomer.response.body.$.id}} HTTP/1.1
+
+###
+# @name updateCustomer
+PUT http://{{host}}/customers/{{createCustomer.response.body.$.id}} HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "Ana Ivanovic",
+    "email": "ivanovic@wta.com"
+}
+
+###
+# @name deleteCustomer
+DELETE http://{{host}}/customers/{{createCustomer.response.body.$.id}} HTTP/1.1

@@ -122,8 +122,8 @@ func (uc *ListCustomersUseCase) Execute(input *ListCustomersInput) (*ListCustome
 
 type UpdateCustomerInput struct {
 	Id    string
-	Name  string
-	Email string
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type UpdateCustomerOutput struct {

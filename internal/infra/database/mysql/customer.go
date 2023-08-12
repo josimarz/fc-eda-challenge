@@ -39,7 +39,7 @@ func (g *CustomerGateway) FindById(id string) (*entity.Customer, error) {
 		return nil, err
 	}
 	defer stmt.Close()
-	var customer *entity.Customer
+	customer := &entity.Customer{}
 	dest := []any{
 		&customer.Id,
 		&customer.Name,
@@ -66,7 +66,7 @@ func (g *CustomerGateway) FindAll() ([]*entity.Customer, error) {
 	defer rows.Close()
 	var customers []*entity.Customer
 	for rows.Next() {
-		var customer *entity.Customer
+		customer := &entity.Customer{}
 		dest := []any{
 			&customer.Id,
 			&customer.Name,

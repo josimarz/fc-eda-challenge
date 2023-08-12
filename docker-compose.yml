@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  walletcore_db:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=tB8kN9lG1rZ0vF2h
+      - MYSQL_DATABASE=walletcore
+      - MYSQL_USER=walletcore
+      - MYSQL_PASSWORD=hT8zP9nX8aU8tC1j
+    ports:
+      - 3306:3306
+    volumes:
+      - .docker/walletcore/mysql:/var/lib/mysql
+      - ./scripts/walletcore/:/docker-entrypoint-initdb.d
+  transactions_db:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=fK8rB7eF1eI3cX8z
+      - MYSQL_DATABASE=transactions
+      - MYSQL_USER=transactions
+      - MYSQL_PASSWORD=sF9uA2dA1zK6nG0d
+    ports:
+      - 3307:3306
+    volumes:
+      - .docker/transactions/mysql:/var/lib/mysql
+      - ./scripts/transactions/:/docker-entrypoint-initdb.d
