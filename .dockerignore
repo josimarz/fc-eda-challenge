@@ -1,0 +1,8 @@
+.docker
+.vscode
+scripts
+.dockerignore
+docker-compose.yml
+Dockerfile
+LICENSE
+README.md

@@ -35,6 +35,7 @@ var (
 	listCustomerAccountsUseCase *usecase.ListCustomerAccountsUseCase
 	depositUseCase              *usecase.DepositUseCase
 	withdrawUseCase             *usecase.WithdrawUseCase
+	showAccountBalanceUseCase   *usecase.ShowAccountBalanceUseCase
 	createTransactionUseCase    *usecase.CreateTransactionUseCase
 	createCustomerHandler       *webserver.CreateCustomerHandler
 	findCustomerHandler         *webserver.FindCustomerHandler
@@ -45,6 +46,7 @@ var (
 	listCustomerAccountsHandler *webserver.ListCustomerAccountsHandler
 	depositHandler              *webserver.DepositHandler
 	withdrawHandler             *webserver.WithdrawHandler
+	showAccountBalanceHandler   *webserver.ShowAccountBalanceHandler
 	createTransactionHandler    *webserver.CreateTransactionHandler
 	producer                    *kafka.Producer
 	consumer                    *kafka.Consumer
@@ -149,6 +151,7 @@ func createUseCases() {
 	listCustomerAccountsUseCase = usecase.NewListCustomerAccountsUseCase(accountGateway, customerGateway)
 	depositUseCase = usecase.NewDepositUseCase(accountGateway)
 	withdrawUseCase = usecase.NewWithdrawUseCase(accountGateway)
+	showAccountBalanceUseCase = usecase.NewShowAccountBalanceUseCase(accountGateway)
 	createTransactionUseCase = usecase.NewCreateTransactionUseCase(transactionGateway, accountGateway, eventDispatcher)
 }
 
@@ -162,6 +165,7 @@ func createHandlers() {
 	listCustomerAccountsHandler = webserver.NewListCustomerAccountsHandler(listCustomerAccountsUseCase)
 	depositHandler = webserver.NewDepositHandler(depositUseCase)
 	withdrawHandler = webserver.NewWithdrawHandler(withdrawUseCase)
+	showAccountBalanceHandler = webserver.NewShowAccountBalanceHandler(showAccountBalanceUseCase)
 	createTransactionHandler = webserver.NewCreateTransactionHandler(createTransactionUseCase)
 }
 
@@ -176,6 +180,7 @@ func startServer() error {
 	server.AddHandler(listCustomerAccountsHandler)
 	server.AddHandler(depositHandler)
 	server.AddHandler(withdrawHandler)
+	server.AddHandler(showAccountBalanceHandler)
 	server.AddHandler(createTransactionHandler)
 
 	ch := make(chan error)

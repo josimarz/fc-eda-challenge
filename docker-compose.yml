@@ -1,67 +1,113 @@
 version: '3.8'
 
 services:
+  app:
+    build:
+      context: .
+    container_name: fc-eda-challenge_app
+    environment:
+      - PORT=:3003
+      - WALLET_CORE_DSN=walletcore:hT8zP9nX8aU8tC1j@tcp(walletcore_db:3306)/walletcore?charset=utf8&parseTime=True&loc=Local
+      - TRANSACTIONS_DSN=transactions:sF9uA2dA1zK6nG0d@tcp(transactions_db:3307)/transactions?charset=utf8&parseTime=True&loc=Local
+      - KAFKA_DSN=kafka:29092
+    depends_on:
+      walletcore_db:
+        condition: service_healthy
+      transactions_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - 3003:3003
+    networks:
+      - app-network
   walletcore_db:
     image: mysql:latest
-    container_name: walletcore_db
+    container_name: fc-eda-challenge_walletcore_db
     environment:
       - MYSQL_ROOT_PASSWORD=tB8kN9lG1rZ0vF2h
       - MYSQL_DATABASE=walletcore
       - MYSQL_USER=walletcore
       - MYSQL_PASSWORD=hT8zP9nX8aU8tC1j
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     ports:
       - 3306:3306
     volumes:
       - .docker/walletcore/mysql:/var/lib/mysql
       - ./scripts/walletcore/:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
   transactions_db:
     image: mysql:latest
-    container_name: transactions_db
+    container_name: fc-eda-challenge_transactions_db
     environment:
       - MYSQL_ROOT_PASSWORD=fK8rB7eF1eI3cX8z
       - MYSQL_DATABASE=transactions
       - MYSQL_USER=transactions
       - MYSQL_PASSWORD=sF9uA2dA1zK6nG0d
+      - MYSQL_TCP_PORT=3307
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     ports:
-      - 3307:3306
+      - 3307:3307
     volumes:
       - .docker/transactions/mysql:/var/lib/mysql
       - ./scripts/transactions/:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
   zookeeper:
     image: "confluentinc/cp-zookeeper:6.1.0"
-    container_name: zookeeper
+    container_name: fc-eda-challenge_zookeeper
     ports:
       - 2181:2181
     environment:
       - TZ=Sao_Paulo/Brazil
       - ZOOKEEPER_CLIENT_PORT=2181
       - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - app-network
   kafka:
     image: confluentinc/cp-enterprise-kafka:6.1.0
-    container_name: kafka
+    hostname: kafka
+    container_name: fc-eda-challenge_kafka
     depends_on:
       - zookeeper
     ports:
       - 9092:9092
     environment:
-      - TZ=Sao_Paulo/Brazil
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
-      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=100
-      - CONFLUENT_METRICS_ENABLE='false'
+      TZ: Sao_Paulo/Brazil
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      start_period: 15s
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - app-network
   control-center:
     image: confluentinc/cp-enterprise-control-center:7.3.0
     hostname: control-center
-    container_name: control-center
+    container_name: fc-eda-challenge_control-center
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - 9021:9021
     environment:
@@ -71,3 +117,9 @@ services:
       - CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS=1
       - CONFLUENT_METRICS_TOPIC_REPLICATION=1
       - PORT=9021
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

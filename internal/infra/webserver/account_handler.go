@@ -144,3 +144,36 @@ func (h *WithdrawHandler) GetHandlerFunc() http.HandlerFunc {
 		}
 	}
 }
+
+type ShowAccountBalanceHandler struct {
+	uc *usecase.ShowAccountBalanceUseCase
+}
+
+func NewShowAccountBalanceHandler(uc *usecase.ShowAccountBalanceUseCase) *ShowAccountBalanceHandler {
+	return &ShowAccountBalanceHandler{uc}
+}
+
+func (h *ShowAccountBalanceHandler) GetMethod() string {
+	return "GET"
+}
+
+func (h *ShowAccountBalanceHandler) GetPattern() string {
+	return "/balances/{id}"
+}
+
+func (h *ShowAccountBalanceHandler) GetHandlerFunc() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		input := &usecase.ShowAccountBalanceInput{
+			Id: chi.URLParam(r, "id"),
+		}
+		output, err := h.uc.Execute(input)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(output); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}

@@ -190,3 +190,35 @@ func (uc *WithdrawUseCase) Execute(input *WithdrawInput) (*WithdrawOutput, error
 		},
 	}, nil
 }
+
+type ShowAccountBalanceInput struct {
+	Id string
+}
+
+type ShowAccountBalanceOutput struct {
+	Id        string    `json:"id"`
+	Balance   float64   `json:"balance"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type ShowAccountBalanceUseCase struct {
+	accountGateway gateway.AccountGateway
+}
+
+func NewShowAccountBalanceUseCase(accountGateway gateway.AccountGateway) *ShowAccountBalanceUseCase {
+	return &ShowAccountBalanceUseCase{accountGateway}
+}
+
+func (uc *ShowAccountBalanceUseCase) Execute(input *ShowAccountBalanceInput) (*ShowAccountBalanceOutput, error) {
+	account, err := uc.accountGateway.FindById(input.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &ShowAccountBalanceOutput{
+		Id:        account.Id,
+		Balance:   account.Balance,
+		CreatedAt: account.CreatedAt,
+		UpdatedAt: account.UpdatedAt,
+	}, nil
+}
