@@ -78,27 +78,9 @@ Ainda no arquivo `api.http`, utilize a requisição denominada `listCustomerAcco
 
 ## Realizando transações
 
-Para efetuar uma transação, no arquivo `api.http` procure pela requisição denominada `createTransaction`. No corpo da requisição atribua para o campo `from` o `id` da conta de origem, isto é, a conta da qual o valor será debitado. Para o campo `to`, atribua o `id` da conta de destino, isto é, a conta na qual o valor será creditado. No campo `amount`, informe o valor da operação. A resposta da requisição exibirá a condição atualizada das contas envolvidas na operação.
+Para efetuar uma transação, no arquivo `api.http` procure pela requisição denominada `createTransaction`. No corpo da requisição atribua para o campo `from` o `id` da conta de origem, isto é, a conta da qual o valor será debitado. Para o campo `to`, atribua o `id` da conta de destino, isto é, a conta na qual o valor será creditado. No campo `amount`, informe o valor da operação. Esta requisição retorna uma resposta vazia, isto é, `204`.
 
-```json
-{
-  "from": {
-    "id": "a9f3fd64-39e7-11ee-b8f7-0242ac120004",
-    "balance": 4000,
-    "createdAt": "2023-08-13T14:42:44Z",
-    "updatedAt": "2023-08-13T15:08:59.208585952Z"
-  },
-  "to": {
-    "id": "a9f80299-39e7-11ee-b8f7-0242ac120004",
-    "balance": 1500,
-    "createdAt": "2023-08-13T14:42:44Z",
-    "updatedAt": "2023-08-13T15:08:59.208585874Z"
-  },
-  "amount": 1000
-}
-```
-
-Sempre que uma transação é criada, uma nova mensagem é enviada para o Apache Kafka. As mensagens são consumidas pelo serviço WalletCore, responsável pela atualização do balanço das contas envolvidas na transação.
+Sempre que uma transação é criada, uma nova mensagem é enviada para o tópico `transactions` do Apache Kafka. As mensagens enviadas para esse tópico são consumidas pelo microsserviço `transactions`. O microsserviço `transactions`, por sua vez, cria um novo registro de transação no banco de dados e emite uma mensagem para o tópico `balances` do Apache Kafka. As mensagens enviadas para o tópico `balances` são consumidas pelo serviço `walletcore` que efetua a atualização dos balanços da conta envolvidas na transação.
 
 ## Consultando o balanço das contas
 

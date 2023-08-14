@@ -10,7 +10,7 @@ type TransactionCreatedEvent struct {
 
 func NewTransactionCreatedEvent() *TransactionCreatedEvent {
 	return &TransactionCreatedEvent{
-		name:     "balance.updated",
+		name:     "transaction.created",
 		dateTime: time.Now(),
 	}
 }
@@ -28,5 +28,34 @@ func (e *TransactionCreatedEvent) SetPayload(payload interface{}) {
 }
 
 func (e *TransactionCreatedEvent) GetDateTime() time.Time {
+	return e.dateTime
+}
+
+type BalancesUpdatedEvent struct {
+	name     string
+	dateTime time.Time
+	payload  interface{}
+}
+
+func NewBalancesUpdatedEvent() *BalancesUpdatedEvent {
+	return &BalancesUpdatedEvent{
+		name:     "balances.updated",
+		dateTime: time.Now(),
+	}
+}
+
+func (e *BalancesUpdatedEvent) GetName() string {
+	return e.name
+}
+
+func (e *BalancesUpdatedEvent) GetPayload() interface{} {
+	return e.payload
+}
+
+func (e *BalancesUpdatedEvent) SetPayload(payload interface{}) {
+	e.payload = payload
+}
+
+func (e *BalancesUpdatedEvent) GetDateTime() time.Time {
 	return e.dateTime
 }

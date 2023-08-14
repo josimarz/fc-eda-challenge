@@ -64,7 +64,7 @@ func (uc *CreateTransactionUseCase) Execute(input *CreateTransactionInput) (*Cre
 		},
 		Amount: transaction.Amount,
 	}
-	event := eventhandling.NewTransactionCreatedEvent()
+	event := eventhandling.NewBalancesUpdatedEvent()
 	event.SetPayload(output)
 	uc.eventDispatcher.Dispatch(event)
 	return output, nil

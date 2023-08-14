@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"net/http"
 
+	eventhandling "github.com/josimarz/fc-eda-challenge/internal/event_handling"
 	"github.com/josimarz/fc-eda-challenge/internal/usecase"
+	"github.com/josimarz/fc-eda-challenge/pkg/events"
 )
 
 type CreateTransactionHandler struct {
-	uc *usecase.CreateTransactionUseCase
+	ed *events.EventDispatcher
 }
 
-func NewCreateTransactionHandler(uc *usecase.CreateTransactionUseCase) *CreateTransactionHandler {
-	return &CreateTransactionHandler{uc}
+func NewCreateTransactionHandler(ed *events.EventDispatcher) *CreateTransactionHandler {
+	return &CreateTransactionHandler{ed}
 }
 
 func (h *CreateTransactionHandler) GetMethod() string {
@@ -30,14 +32,9 @@ func (h *CreateTransactionHandler) GetHandlerFunc() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		output, err := h.uc.Execute(&input)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(output); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		event := eventhandling.NewTransactionCreatedEvent()
+		event.SetPayload(input)
+		h.ed.Dispatch(event)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

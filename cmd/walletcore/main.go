@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	_ "github.com/go-sql-driver/mysql"
@@ -22,10 +24,8 @@ var (
 	config                      *configs.Config
 	server                      *webserver.Server
 	walletCoreDB                *sql.DB
-	transactionsDB              *sql.DB
 	customerGateway             gateway.CustomerGateway
 	accountGateway              gateway.AccountGateway
-	transactionGateway          gateway.TransactionGateway
 	createCustomerUseCase       *usecase.CreateCustomerUseCase
 	findCustomerUseCase         *usecase.FindCustomerUseCase
 	listCustomersUseCase        *usecase.ListCustomersUseCase
@@ -36,7 +36,6 @@ var (
 	depositUseCase              *usecase.DepositUseCase
 	withdrawUseCase             *usecase.WithdrawUseCase
 	showAccountBalanceUseCase   *usecase.ShowAccountBalanceUseCase
-	createTransactionUseCase    *usecase.CreateTransactionUseCase
 	createCustomerHandler       *webserver.CreateCustomerHandler
 	findCustomerHandler         *webserver.FindCustomerHandler
 	listCustomersHandler        *webserver.ListCustomersHandler
@@ -64,11 +63,6 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	err = openTransactionsDB()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	startEventProducer()
 	go startEventConsumer()
 	createGateways()
@@ -90,11 +84,6 @@ func openWalletCoreDB() (err error) {
 	return err
 }
 
-func openTransactionsDB() (err error) {
-	transactionsDB, err = sql.Open("mysql", config.TransactionsDSN)
-	return err
-}
-
 func startEventProducer() {
 	configMap := ckafka.ConfigMap{
 		"bootstrap.servers": config.KafkaDSN,
@@ -102,7 +91,7 @@ func startEventProducer() {
 	}
 	producer = kafka.NewProducer(&configMap)
 	eventDispatcher = events.NewEventDispatcher()
-	eventDispatcher.Register("balance.updated", eventhandling.NewBalanceUpdatedHandler(producer))
+	eventDispatcher.Register("transaction.created", eventhandling.NewTransactionCreatedHandler(producer))
 }
 
 func startEventConsumer() {
@@ -110,7 +99,34 @@ func startEventConsumer() {
 		"bootstrap.servers": config.KafkaDSN,
 		"group.id":          "wallet",
 	}
-	consumer = kafka.NewConsumer(&configMap, []string{"transactions"})
+	client, err := ckafka.NewAdminClient(&configMap)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	maxDur, err := time.ParseDuration("60s")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	topics := []ckafka.TopicSpecification{
+		{
+			Topic:             "transactions",
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+		{
+			Topic:             "balances",
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+	}
+	results, err := client.CreateTopics(context.Background(), topics, ckafka.SetAdminOperationTimeout(maxDur))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	for _, result := range results {
+		fmt.Printf("%s\n", result)
+	}
+	consumer = kafka.NewConsumer(&configMap, []string{"balances"})
 	ch := make(chan *ckafka.Message)
 	go consumer.Consume(ch)
 	for {
@@ -138,7 +154,6 @@ func startEventConsumer() {
 func createGateways() {
 	customerGateway = mysql.NewCustomerGateway(walletCoreDB)
 	accountGateway = mysql.NewAccountGateway(walletCoreDB)
-	transactionGateway = mysql.NewTransactionGateway(transactionsDB)
 }
 
 func createUseCases() {
@@ -152,7 +167,6 @@ func createUseCases() {
 	depositUseCase = usecase.NewDepositUseCase(accountGateway)
 	withdrawUseCase = usecase.NewWithdrawUseCase(accountGateway)
 	showAccountBalanceUseCase = usecase.NewShowAccountBalanceUseCase(accountGateway)
-	createTransactionUseCase = usecase.NewCreateTransactionUseCase(transactionGateway, accountGateway, eventDispatcher)
 }
 
 func createHandlers() {
@@ -166,7 +180,7 @@ func createHandlers() {
 	depositHandler = webserver.NewDepositHandler(depositUseCase)
 	withdrawHandler = webserver.NewWithdrawHandler(withdrawUseCase)
 	showAccountBalanceHandler = webserver.NewShowAccountBalanceHandler(showAccountBalanceUseCase)
-	createTransactionHandler = webserver.NewCreateTransactionHandler(createTransactionUseCase)
+	createTransactionHandler = webserver.NewCreateTransactionHandler(eventDispatcher)
 }
 
 func startServer() error {

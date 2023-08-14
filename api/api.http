@@ -4,7 +4,7 @@
 
 ###
 # @name showAccountBalance
-GET http://{{host}}/balances/a9f3fd64-39e7-11ee-b8f7-0242ac120004 HTTP/1.1
+GET http://{{host}}/balances/7d03f050-3ac2-11ee-82c6-0242ac120004 HTTP/1.1
 
 ###
 # @name createCustomer
@@ -44,7 +44,7 @@ POST http://{{host}}/customers/46538e77-39e2-11ee-aa43-0242ac180002/accounts HTT
 
 ###
 # @name listCustomerAccounts
-GET http://{{host}}/customers/a9f30a18-39e7-11ee-b8f7-0242ac120004/accounts HTTP/1.1
+GET http://{{host}}/customers/7cff3e3f-3ac2-11ee-82c6-0242ac120004/accounts HTTP/1.1
 
 ###
 # @name deposit
@@ -70,7 +70,7 @@ POST http://{{host}}/transactions HTTP/1.1
 Content-Type: application/json
 
 {
-    "from": "a9f3fd64-39e7-11ee-b8f7-0242ac120004",
-    "to": "a9f80299-39e7-11ee-b8f7-0242ac120004",
-    "amount": 1000.0
+    "from": "7cffdd21-3ac2-11ee-82c6-0242ac120004",
+    "to": "7d03f050-3ac2-11ee-82c6-0242ac120004",
+    "amount": 500.0
 }

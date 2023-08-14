@@ -12,7 +12,7 @@ type TransactionCreatedHandler struct {
 	producer *kafka.Producer
 }
 
-func NewBalanceUpdatedHandler(producer *kafka.Producer) *TransactionCreatedHandler {
+func NewTransactionCreatedHandler(producer *kafka.Producer) *TransactionCreatedHandler {
 	return &TransactionCreatedHandler{producer}
 }
 
@@ -20,4 +20,18 @@ func (h *TransactionCreatedHandler) Handle(message events.Event, wg *sync.WaitGr
 	defer wg.Done()
 	h.producer.Publish(message.GetPayload(), nil, "transactions")
 	fmt.Println("TransactionCreatedHandler called")
+}
+
+type BalancesUpdatedHandler struct {
+	producer *kafka.Producer
+}
+
+func NewBalancesUpdatedHandler(producer *kafka.Producer) *BalancesUpdatedHandler {
+	return &BalancesUpdatedHandler{producer}
+}
+
+func (h *BalancesUpdatedHandler) Handle(message events.Event, wg *sync.WaitGroup) {
+	defer wg.Done()
+	h.producer.Publish(message.GetPayload(), nil, "balances")
+	fmt.Println("BalancesUpdatedHandler called")
 }
